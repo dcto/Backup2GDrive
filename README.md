@@ -18,8 +18,8 @@ The script support
 
 ### 1、下载脚本
 ````
-wget --no-check-certificate https://github.com/dcto/Backup2GDrive
-chmod +x backup.sh
+git clone https://github.com/dcto/Backup2GDrive
+chmod +x Backup2GDrive.sh
 ````
 
 
