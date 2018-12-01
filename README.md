@@ -29,11 +29,11 @@ Encrypt （加密FLG，true 为加密，false 为不加密，默认是加密）
 
 Password （加密密码，重要，务必要修改）
 
-LocalDir （备份目录，可自己指定）
+SaveDir （备份目录，可自己指定）
 
 TempDir （备份目录的临时目录，可自己指定）
 
-LogFile （脚本运行产生的日志文件路径）
+LogsFile （脚本运行产生的日志文件路径）
 
 Google_Drive_Dir_ID (备份到Google Drive 批定目录 *需要获得目录ID)
 
@@ -48,8 +48,8 @@ MYSQL_DATABASE_NAME[0]="phpmyadmin"
 MYSQL_DATABASE_NAME[1]="test"`
 ````
 
-BACKUP （需要备份的指定目录或文件列表，留空就是不备份目录或文件）
-※ BACKUP 是一个数组变量，可以指定多个,举例如下：
+BACKUP_DIR_FILES （需要备份的指定目录或文件列表，留空就是不备份目录或文件）
+※ BACKUP_DIR_FILES 是一个数组变量，可以指定多个,举例如下：
 
 ````
 BACKUP[0]="/data/www/default/test.php"
@@ -57,9 +57,9 @@ BACKUP[1]="/data/www/default/test/"
 BACKUP[2]="/data/www/default/test2/"
 ````
 
-LocalSaveDays （指定多少天之后删除本地旧的备份文件，默认为 7 天）
+SaveTime （指定多少天之后删除本地旧的备份文件，默认为 7 天）
 
-DELETE_REMOTE_FILE （删除 Google Drive 或 FTP 上的备份文件 FLG，true 为删除，false 为不删除）
+DELETE_REMOTE_FILE （删除 Google Drive 或 FTP 上的备份文件，true 为删除，false 为不删除）
 
 FTP （上传文件至 FTP 的 FLG，true 为上传，false 为不上传）
 

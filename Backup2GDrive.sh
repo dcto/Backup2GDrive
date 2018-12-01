@@ -31,7 +31,7 @@ Password="backup_password"
 
 # Directory to store backups
 # 本地备份路径
-LocalDir="/home/backup/"
+SaveDir="/home/backup/data/"
 
 # Temporary directory used during backup creation
 # 临时备份路径
@@ -39,7 +39,7 @@ TempDir="/home/backup/tmp/"
 
 # File to log the outcome of backups
 # 日志文件
-LogFile="/home/backup/RunTime.log"
+LogsFile="/home/backup/log/backup.log"
 
 # upload to google drive dir
 # 保存到Google drive指定目录，留空为根目录
@@ -59,12 +59,12 @@ MYSQL_DATABASE_NAME[0]=""
 # For example:
 # File: /data/www/default/test.php
 # Directory: /data/www/default/test
-
-BACKUP[0]=""
+# 备份文件或者整个目录文件
+BACKUP_DIR_FILES[0]=""
 
 # Number of days to store daily local backups (default 7 days)
 # 保留本地备份文件
-LocalSaveDays="7"
+SaveTime="7"
 
 # Delete Google Drive's & FTP server's remote file flag (true: delete, false: not delete)
 # 删除Google Drive 同名文件
@@ -103,17 +103,17 @@ FTP_DIR=""
 DAY=$(date +%d)
 MONTH=$(date +%m)
 YEAR=$(date +%C%y)
-BACKUPDATE=$(date +%Y%m%d%H%M%S)
+Backup_File_Date=$(date +%Y%m%d%H%M%S)
 # Backup file name
-TARFILE="${LocalDir}""$(hostname)"_"${BACKUPDATE}".tgz
+Backup_File_Name="${SaveDir}""$(hostname)"_"${Backup_File_Date}".tgz
 # Encrypted backup file name
-ENC_TARFILE="${TARFILE}.enc"
+ENC_BackFile="${Backup_File_Name}.enc"
 # Backup MySQL dump file name
-SQLFILE="${TempDir}mysql_${BACKUPDATE}.sql"
+SQL_File="${TempDir}mysql_${Backup_File_Date}.sql"
 
 log() {
     echo "$(date "+%Y-%m-%d %H:%M:%S")" "$1"
-    echo -e "$(date "+%Y-%m-%d %H:%M:%S")" "$1" >> ${LogFile}
+    echo -e "$(date "+%Y-%m-%d %H:%M:%S")" "$1" >> ${LogsFile}
 }
 
 # Check for list of mandatory binaries
@@ -169,19 +169,19 @@ EOF
         fi
 
         if [ "${MYSQL_DATABASE_NAME[*]}" == "" ]; then
-            mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${SQLFILE}" 2>/dev/null
+            mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${SQL_File}" 2>/dev/null
             if [ $? -ne 0 ]; then
                 log "MySQL all databases backup failed"
                 exit 1
             fi
-            log "MySQL all databases dump file name: ${SQLFILE}"
+            log "MySQL all databases dump file name: ${SQL_File}"
             #Add MySQL backup dump file to BACKUP list
-            BACKUP=(${BACKUP[*]} ${SQLFILE})
+            BACKUP=(${BACKUP[*]} ${SQL_File})
         else
             for db in ${MYSQL_DATABASE_NAME[*]}
             do
                 unset DBFILE
-                DBFILE="${TempDir}${db}_${BACKUPDATE}.sql"
+                DBFILE="${TempDir}${db}_${Backup_File_Date}.sql"
                 mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" ${db} > "${DBFILE}" 2>/dev/null
                 if [ $? -ne 0 ]; then
                     log "MySQL database name [${db}] backup failed, please check database name is correct and try again"
@@ -200,7 +200,7 @@ start_backup() {
     [ "${BACKUP[*]}" == "" ] && echo "Error: You must to modify the [$(basename $0)] config before run it!" && exit 1
 
     log "Tar backup file start"
-    tar -zcPf ${TARFILE} ${BACKUP[*]}
+    tar -zcPf ${Backup_File_Name} ${BACKUP[*]}
     if [ $? -gt 1 ]; then
         log "Tar backup file failed"
         exit 1
@@ -210,12 +210,12 @@ start_backup() {
     # Encrypt tar file
     if ${Encrypt}; then
         log "Encrypt backup file start"
-        openssl enc -aes256 -in "${TARFILE}" -out "${ENC_TARFILE}" -pass pass:"${Password}" -md sha1
+        openssl enc -aes256 -in "${Backup_File_Name}" -out "${ENC_BackFile}" -pass pass:"${Password}" -md sha1
         log "Encrypt backup file completed"
 
         # Delete unencrypted tar
-        log "Delete unencrypted tar file: ${TARFILE}"
-        rm -f ${TARFILE}
+        log "Delete unencrypted tar file: ${Backup_File_Name}"
+        rm -f ${Backup_File_Name}
     fi
 
     # Delete MySQL temporary dump file
@@ -226,9 +226,9 @@ start_backup() {
     done
 
     if ${Encrypt}; then
-        OUT_FILE="${ENC_TARFILE}"
+        OUT_FILE="${ENC_BackFile}"
     else
-        OUT_FILE="${TARFILE}"
+        OUT_FILE="${Backup_File_Name}"
     fi
     log "File name: ${OUT_FILE}, File size: `calculate_size ${OUT_FILE}`"
 }
@@ -243,9 +243,9 @@ gdrive_upload() {
     if ${GDrive_Command}; then
         log "Uploading backup file to Google Drive."
         if ["${Google_Drive_Dir_ID}" == ""]; then
-            gdrive upload  --no-progress ${OUT_FILE} >> ${LogFile}
+            gdrive upload  --no-progress ${OUT_FILE} >> ${LogsFile}
         else
-            gdrive upload  --parent ${Google_Drive_Dir_ID} --no-progress ${OUT_FILE} >> ${LogFile}
+            gdrive upload  --parent ${Google_Drive_Dir_ID} --no-progress ${OUT_FILE} >> ${LogsFile}
         fi
 
         if [ $? -ne 0 ]; then
@@ -266,7 +266,7 @@ ftp_upload() {
 
         local FTP_OUT_FILE=$(basename ${OUT_FILE})
         log "Tranferring backup file to FTP server"
-        ftp -inp ${FTP_HOST} 2>&1 >> ${LogFile} <<EOF
+        ftp -inp ${FTP_HOST} 2>&1 >> ${LogsFile} <<EOF
 user $FTP_USER $FTP_PASS
 binary
 lcd $LOCALDIR
@@ -304,7 +304,7 @@ delete_gdrive_file() {
     if ${DELETE_REMOTE_FILE} && ${GDrive_Command}; then
         local FileID=$(gdrive list -q "name = '${FileName}'" --no-header | awk '{print $1}')
         if [ -n ${FileID} ]; then
-            gdrive delete ${FileID} >> ${LogFile}
+            gdrive delete ${FileID} >> ${LogsFile}
             log "Google Drive's old backup file name: ${FileName} has been deleted"
         fi
     fi
@@ -314,7 +314,7 @@ delete_gdrive_file() {
 delete_ftp_file() {
     local FileName=$1
     if ${DELETE_REMOTE_FILE} && ${FTP}; then
-        ftp -in ${FTP_HOST} 2>&1 >> ${LogFile} <<EOF
+        ftp -in ${FTP_HOST} 2>&1 >> ${LogsFile} <<EOF
 user $FTP_USER $FTP_PASS
 cd $FTP_DIR
 del $FileName
@@ -326,7 +326,7 @@ EOF
 
 # Clean up old file
 clean_up_files() {
-    cd ${LocalDir} || exit
+    cd ${SaveDir} || exit
 
     if ${Encrypt}; then
         LS=($(ls *.enc))
@@ -338,7 +338,7 @@ clean_up_files() {
     do
         get_file_date ${f}
         if [ $? == 0 ]; then
-            if [[ ${FileTime} -gt ${LocalSaveDays} ]]; then
+            if [[ ${FileTime} -gt ${SaveTime} ]]; then
                 rm -f ${f}
                 log "Old backup file name: ${f} has been deleted"
                 delete_gdrive_file ${f}
@@ -352,8 +352,8 @@ clean_up_files() {
 StartTime=$(date +%s)
 
 # Check if the backup folders exist and are writeable
-if [ ! -d "${LocalDir}" ]; then
-    mkdir -p ${LocalDir}
+if [ ! -d "${SaveDir}" ]; then
+    mkdir -p ${SaveDir}
 fi
 if [ ! -d "${TempDir}" ]; then
     mkdir -p ${TempDir}
@@ -377,4 +377,4 @@ DURATION=$((OverTime - StartTime))
 log "All done"
 log "Backup and transfer completed in ${DURATION} seconds"
 log "=======================END=========================="
-log "\r\n"
+log "\n"
