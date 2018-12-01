@@ -16,14 +16,14 @@ The script support
 5、Delete of the old files in local and remote files in Google Drive;
 
 
-###1、下载脚本
+### 1、下载脚本
 ````
 wget --no-check-certificate https://github.com/dcto/Backup2GDrive
 chmod +x backup.sh
 ````
 
 
-###2、配置说明
+### 2、配置说明
 
 Encrypt （加密FLG，true 为加密，false 为不加密，默认是加密）
 
@@ -89,7 +89,7 @@ tar -zxPf [DECRYPTION BACKUP FILE]
 解释一下参数 -P：
 tar 压缩文件默认都是相对路径的。加个 -P 是为了 tar 能以绝对路径压缩文件。因此，解压的时候也要带个 -P 参数。
 
-###3、配置 gdrive 命令
+### 3、配置 gdrive 命令
 
 gdrive 是一个命令行工具，用于 Google Drive 的上传下载等操作。官网网站：
 https://github.com/prasmussen/gdrive
@@ -112,7 +112,7 @@ chmod +x /usr/bin/gdrive
 
 根据提示用浏览器打开 gdrive 给出的 URL，点击接受（Accept），然后将浏览器上显示出来的字符串粘贴回命令行里，完成授权。
 
-###4、运行脚本
+### 4、运行脚本
 >./Backup2GDrive.sh
 
 脚本默认会显示备份进度，并在最后统计出所需时间。
