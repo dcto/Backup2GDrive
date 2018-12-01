@@ -359,7 +359,7 @@ if [ ! -d "${TempDir}" ]; then
     mkdir -p ${TempDir}
 fi
 if [ ! -f "${LogsFile}" ]; then
-    touch ${LogsFile}
+    mkdir -p "$(dirname "${LogsFile}")" && touch "${LogsFile}"
 fi
 
 log "Backup progress start"
