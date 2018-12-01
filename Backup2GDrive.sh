@@ -362,6 +362,7 @@ if [ ! -f "${LogsFile}" ]; then
     mkdir -p "$(dirname "${LogsFile}")" && touch "${LogsFile}"
 fi
 
+log "\n\n"
 log "=======================Start=========================="
 log "Backup progress start"
 check_commands
