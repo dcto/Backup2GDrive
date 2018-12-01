@@ -242,7 +242,7 @@ start_backup() {
 gdrive_upload() {
     if ${GDrive_Command}; then
         log "Uploading backup file to Google Drive."
-        if ["${Google_Drive_Dir_ID}" == ""]; then
+        if [ -z ${Google_Drive_Dir_ID} ]; then
             gdrive upload  --no-progress ${OUT_FILE} >> ${LogsFile}
         else
             gdrive upload  --parent ${Google_Drive_Dir_ID} --no-progress ${OUT_FILE} >> ${LogsFile}
@@ -362,6 +362,7 @@ if [ ! -f "${LogsFile}" ]; then
     mkdir -p "$(dirname "${LogsFile}")" && touch "${LogsFile}"
 fi
 
+log "=======================Start=========================="
 log "Backup progress start"
 check_commands
 mysql_backup
@@ -380,4 +381,4 @@ DURATION=$((OverTime - StartTime))
 log "All done"
 log "Backup and transfer completed in ${DURATION} seconds"
 log "=======================END=========================="
-log "\n"
+log "\n\n"
